@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M&A Deal Tracker</title>
+<style>
+  :root { --navy:#0f172a; --slate:#334155; --gray:#64748b; --light:#f8fafc; --border:#e2e8f0; --indigo:#6366f1; --green:#10b981; --amber:#f59e0b; --blue:#3b82f6; --red:#dc2626; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#fff; color:var(--navy); padding:20px; max-width:900px; margin:0 auto; }
+  h1 { font-size:22px; font-weight:800; margin-bottom:4px; }
+  h1 span { color:var(--indigo); }
+  .sub { font-size:12px; color:var(--gray); margin-bottom:16px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:6px; margin-bottom:16px; }
+  .card { padding:8px 10px; border-radius:8px; border-left:3px solid; }
+  .card-num { font-size:18px; font-weight:800; }
+  .card-label { font-size:9px; font-weight:600; color:var(--gray); }
+  .deal { background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:8px; cursor:pointer; transition:box-shadow .15s; }
+  .deal:hover { box-shadow:0 2px 12px #0001; }
+  .deal-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .deal-name { font-weight:700; font-size:14px; }
+  .deal-meta { font-size:11px; color:var(--gray); }
+  .badge { padding:2px 9px; border-radius:99px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .progress-row { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .progress-col { flex:1; min-width:70px; }
+  .progress-label { font-size:9px; color:var(--gray); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .progress-bar { height:4px; background:var(--border); border-radius:99px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:99px; transition:width .3s; }
+  .detail { display:none; }
+  .detail.active { display:block; }
+  .back { background:none; border:none; cursor:pointer; font-size:13px; color:var(--indigo); font-weight:600; margin-bottom:10px; padding:0; }
+  .stepper { display:flex; align-items:center; margin-bottom:16px; }
+  .step-dot { width:26px; height:26px; border-radius:99px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; }
+  .step-label { font-size:9px; margin-top:3px; text-align:center; white-space:nowrap; }
+  .step-line { flex:1; height:2px; min-width:8px; margin-bottom:14px; }
+  .info-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px; }
+  .info-card { background:var(--light); border-radius:8px; padding:10px; }
+  .info-label { font-size:10px; font-weight:600; color:var(--gray); text-transform:uppercase; }
+  .info-val { font-size:13px; color:var(--slate); margin-top:3px; }
+  .stage-tabs { display:flex; gap:3px; overflow-x:auto; padding-bottom:6px; margin-bottom:12px; border-bottom:2px solid #f1f5f9; }
+  .stage-tab { padding:7px 12px; border-radius:8px 8px 0 0; border:none; cursor:pointer; font-size:12px; font-weight:500; background:transparent; color:var(--gray); border-bottom:2px solid transparent; white-space:nowrap; }
+  .stage-tab.active { font-weight:700; border-bottom-width:2px; border-bottom-style:solid; }
+  .doc-table { border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .doc-row { display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid #f1f5f9; font-size:13px; }
+  .doc-row:last-child { border-bottom:none; }
+  .doc-row:nth-child(even) { background:#fafbfc; }
+  .doc-cat { background:#f1f5f9; color:var(--gray); padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; white-space:nowrap; }
+  .doc-name { flex:1; color:var(--slate); }
+  .doc-status { font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; }
+  .status-Pending { background:#f1f5f9; color:#94a3b8; }
+  .status-Received { background:#fef3c7; color:#d97706; }
+  .status-Under-Review { background:#dbeafe; color:#2563eb; }
+  .status-Approved { background:#dcfce7; color:#16a34a; }
+  .stage-progress-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:6px; margin-bottom:14px; }
+  .stage-progress-card { padding:8px 10px; border-radius:8px; cursor:pointer; border:1px solid var(--border); }
+  .stage-progress-card.active { border-width:2px; }
+  .pbar { display:flex; align-items:center; gap:6px; }
+  .pbar-track { flex:1; height:4px; background:var(--border); border-radius:99px; overflow:hidden; }
+  .pbar-fill { height:100%; border-radius:99px; background:var(--green); }
+  .pbar-pct { font-size:11px; color:var(--gray); }
+  .summary-line { font-size:12px; color:var(--gray); margin-bottom:8px; }
+  @media(max-width:600px) { .info-grid { grid-template-columns:1fr; } .cards { grid-template-columns:repeat(3,1fr); } }
+</style>
+</head>
+<body>
+
+<h1><span>&#9679;</span> M&A Deal Tracker</h1>
+<div class="sub" id="subtitle"></div>
+
+<div id="pipeline"></div>
+<div id="detail" class="detail"></div>
+
+<script src="data.js"></script>
+<script>
+var STAGES = ["Term Sheet","Due Diligence","Documentation","Closing","Post Closing"];
+var STAGE_COLORS = {"Term Sheet":"#6366f1","Due Diligence":"#f59e0b","Documentation":"#3b82f6","Closing":"#10b981","Post Closing":"#6b7280"};
+var STAGE_SHORT = {"Term Sheet":"Term Sheet","Due Diligence":"Due Diligence","Documentation":"Docs","Closing":"Closing","Post Closing":"Post Close"};
+var STATUS_COLORS = {"Pending":"#94a3b8","Received":"#f59e0b","Under Review":"#3b82f6","Approved":"#10b981"};
+var PRI_COLORS = {"High":"#dc2626","Medium":"#f59e0b","Low":"#10b981"};
+
+function pct(docs) {
+  if (!docs.length) return 0;
+  return Math.round(docs.filter(function(d){return d.status==="Approved"}).length / docs.length * 100);
+}
+
+function badge(label, color) {
+  return '<span class="badge" style="background:'+color+'18;color:'+color+'">'+label+'</span>';
+}
+
+function progressBar(docs, color) {
+  var p = pct(docs);
+  return '<div class="pbar"><div class="pbar-track"><div class="pbar-fill" style="width:'+p+'%;background:'+(color||'#10b981')+'"></div></div><span class="pbar-pct">'+p+'%</span></div>';
+}
+
+function renderPipeline() {
+  var deals = DATA.deals;
+  var docs = DATA.docs;
+  document.getElementById("subtitle").textContent = deals.length + " deals \u00B7 " + docs.filter(function(d){return d.status==="Approved"}).length + "/" + docs.length + " docs approved";
+
+  var html = '<div class="cards">';
+  STAGES.forEach(function(s) {
+    var cnt = deals.filter(function(d){return d.stage===s}).length;
+    html += '<div class="card" style="background:'+STAGE_COLORS[s]+'10;border-color:'+STAGE_COLORS[s]+'"><div class="card-num" style="color:'+STAGE_COLORS[s]+'">'+cnt+'</div><div class="card-label">'+STAGE_SHORT[s]+'</div></div>';
+  });
+  html += '</div>';
+
+  deals.forEach(function(deal) {
+    var dd = docs.filter(function(d){return d.dealId===deal.id});
+    var ap = dd.filter(function(d){return d.status==="Approved"}).length;
+    html += '<div class="deal" onclick="showDeal(\''+deal.id+'\')">';
+    html += '<div class="deal-header">';
+    html += '<div><div class="deal-name">'+deal.company+'</div><div class="deal-meta">'+deal.contact+' \u00B7 '+deal.sector+'</div></div>';
+    html += badge(deal.stage, STAGE_COLORS[deal.stage]);
+    html += badge(deal.priority, PRI_COLORS[deal.priority]);
+    if(deal.dealSize) html += '<strong style="font-size:14px">'+deal.dealSize+'</strong>';
+    html += '<span style="font-size:11px;color:#94a3b8">'+ap+'/'+dd.length+'</span>';
+    html += '</div>';
+    html += '<div class="progress-row">';
+    STAGES.forEach(function(st) {
+      var sd = dd.filter(function(d){return d.stage===st});
+      if(!sd.length) return;
+      var p = pct(sd);
+      html += '<div class="progress-col"><div class="progress-label">'+STAGE_SHORT[st]+'</div><div class="progress-bar"><div class="progress-fill" style="width:'+p+'%;background:'+STAGE_COLORS[st]+'"></div></div></div>';
+    });
+    html += '</div></div>';
+  });
+
+  document.getElementById("pipeline").innerHTML = html;
+  document.getElementById("pipeline").style.display = "block";
+  document.getElementById("detail").className = "detail";
+}
+
+var currentTab = "";
+
+function showDeal(id) {
+  var deal = DATA.deals.filter(function(d){return d.id===id})[0];
+  if(!deal) return;
+  var allDocs = DATA.docs.filter(function(d){return d.dealId===id});
+  currentTab = currentTab || deal.stage;
+
+  var idx = STAGES.indexOf(deal.stage);
+  var html = '<button class="back" onclick="renderPipeline()">\u2190 Back to Pipeline</button>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px">';
+  html += '<div><h2 style="font-size:20px;font-weight:800">'+deal.company+'</h2>';
+  html += '<div style="display:flex;gap:6px;margin-top:4px">'+badge(deal.stage,STAGE_COLORS[deal.stage])+(deal.sector?badge(deal.sector,"#8b5cf6"):"")+badge(deal.priority,PRI_COLORS[deal.priority])+'</div></div>';
+  if(deal.dealSize) html += '<div style="text-align:right"><div style="font-size:22px;font-weight:800">'+deal.dealSize+'</div><div style="font-size:11px;color:#94a3b8">Deal Size</div></div>';
+  html += '</div>';
+
+  // Stepper
+  html += '<div class="stepper">';
+  STAGES.forEach(function(s,i) {
+    var done = i < idx; var active = i === idx; var col = STAGE_COLORS[s];
+    html += '<div style="display:flex;flex-direction:column;align-items:center;flex:1">';
+    html += '<div class="step-dot" style="background:'+(done?"#10b981":active?col:"#e2e8f0")+';color:'+(done||active?"#fff":"#94a3b8")+';">'+(done?"\u2713":(i+1))+'</div>';
+    html += '<div class="step-label" style="font-weight:'+(active?700:500)+';color:'+(active?col:done?"#10b981":"#94a3b8")+'">'+STAGE_SHORT[s]+'</div></div>';
+    if(i<STAGES.length-1) html += '<div class="step-line" style="background:'+(done?"#10b981":"#e2e8f0")+'"></div>';
+  });
+  html += '</div>';
+
+  // Info cards
+  html += '<div class="info-grid">';
+  html += '<div class="info-card"><div class="info-label">Contact</div><div class="info-val">'+(deal.contact||"\u2014")+'</div></div>';
+  html += '<div class="info-card"><div class="info-label">Start Date</div><div class="info-val">'+(deal.startDate||"\u2014")+'</div></div>';
+  html += '<div class="info-card"><div class="info-label">Stage</div><div class="info-val">'+deal.stage+'</div></div>';
+  html += '</div>';
+
+  // Stage progress cards
+  html += '<div class="stage-progress-grid">';
+  STAGES.forEach(function(st) {
+    var sd = allDocs.filter(function(d){return d.stage===st});
+    if(!sd.length) return;
+    var ap = sd.filter(function(d){return d.status==="Approved"}).length;
+    var active = currentTab === st;
+    html += '<div class="stage-progress-card'+(active?" active":"")+'" style="background:'+(active?STAGE_COLORS[st]+"10":"#f8fafc")+';border-color:'+(active?STAGE_COLORS[st]+"44":"#e2e8f0")+'" onclick="currentTab=\''+st+'\';showDeal(\''+id+'\')">';
+    html += '<div style="font-size:10px;font-weight:600;color:'+STAGE_COLORS[st]+';margin-bottom:3px">'+STAGE_SHORT[st]+'</div>';
+    html += progressBar(sd, STAGE_COLORS[st]);
+    html += '<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+ap+'/'+sd.length+'</div></div>';
+  });
+  html += '</div>';
+
+  // Doc table
+  var tabDocs = allDocs.filter(function(d){return d.stage===currentTab});
+  html += '<div class="summary-line">'+tabDocs.filter(function(d){return d.status==="Approved"}).length+'/'+tabDocs.length+' approved in '+currentTab+'</div>';
+  html += '<div class="doc-table">';
+  if(!tabDocs.length) html += '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">No documents for this stage</div>';
+  tabDocs.forEach(function(doc) {
+    var sc = doc.status.replace(/ /g,"-");
+    html += '<div class="doc-row"><span class="doc-cat">'+doc.category+'</span><span class="doc-name">'+doc.name+'</span><span class="doc-status status-'+sc+'">'+doc.status+'</span></div>';
+  });
+  html += '</div>';
+
+  document.getElementById("pipeline").style.display = "none";
+  document.getElementById("detail").innerHTML = html;
+  document.getElementById("detail").className = "detail active";
+}
+
+renderPipeline();
+</script>
+</body>
+</html>
